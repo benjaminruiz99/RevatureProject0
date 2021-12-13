@@ -80,7 +80,7 @@ object JDBC2 {
           }
           if (signedup) {
             val statement = connection.createStatement()
-            val resultSet = statement.executeUpdate(s"INSERT INTO users VALUES ('$desired_username','$desired_password',0);")
+            val resultSet = statement.executeUpdate(s"INSERT INTO users(username,password,funds) VALUES ('$desired_username','$desired_password',0);")
             println("Would you like to access your account? Y for yes, N for no.")
             val temp = readLine()
             if (temp == "N") {
@@ -127,7 +127,32 @@ object JDBC2 {
           while (!exiting) {
             val temp: String = readLine();
             if (temp == "D") {
-              println("Depositing ... done!")
+              var valid_amount = false
+              while (!valid_amount) {
+                println("Enter deposit amount or 0 if you would like to return to menu.")
+                val deposit_amount = readLine().toInt
+                if (deposit_amount > 0) {
+                  valid_amount = true
+                  var user_funds = 0;
+                  val funds_query = connection.createStatement()
+                  val funds_result = funds_query.executeQuery(s"SELECT funds FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  while (funds_result.next()) {
+                    //println("You account balance is: " + user_funds.getString(1))
+                    val temp = funds_result.getString(1)
+                    user_funds += temp.toInt
+                  }
+                  user_funds += deposit_amount
+                  val deposit_update = connection.createStatement()
+                  val deposit_result = deposit_update.executeUpdate(s"UPDATE users SET funds=$user_funds WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  println("Depositing ... done!")
+                }
+                else if (deposit_amount < 0) {
+                  println("Invalid amount to withdraw")
+                }
+                else {
+                  valid_amount = true
+                }
+              }
               println("What would you like to do? D to deposit, W to withdraw, V to view balance,E to exit, or DELETE to delete your account.")
             }
             else if (temp == "W") {
@@ -145,6 +170,33 @@ object JDBC2 {
             else if (temp == "E") {
               println("logging out");
               exiting = true;
+            }
+            else if (temp == "DELETE") {
+              println("Are you sure you want to delete your account? Deleting your account will delete all information associated with this account. Enter Yes or No")
+              var deleting = false
+              while (!deleting) {
+                val delete_input = readLine()
+                if (delete_input == "Yes") {
+                  exiting = true
+                  deleting = true
+                  var delete_id = 0;
+                  val delete_id_query = connection.createStatement()
+                  val delete_id_result = delete_id_query.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  while ( delete_id_result.next() ) {
+                    //println("You account balance is: " + user_funds.getString(1))
+                    val temp = delete_id_result.getString(1)
+                    delete_id = temp.toInt
+                    println("Deleting account with id: " + delete_id)
+                  }
+                  val delete_statement = connection.createStatement()
+                  val delete_result = delete_statement.executeUpdate(s"DELETE FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\' and user_id=$delete_id;")
+                  println("Done")
+                }
+                else if (delete_input == "No") {
+                  deleting = true
+                  println("What would you like to do? D to deposit, W to withdraw, V to view balance,E to exit, or DELETE to delete your account.")
+                }
+              }
             }
           }
         }
