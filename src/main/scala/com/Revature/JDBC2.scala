@@ -243,8 +243,10 @@ object JDBC2 {
                     //println("You account balance is: " + user_funds.getString(1))
                     val temp = delete_id_result.getString(1)
                     delete_id = temp.toInt
-                    println("Deleting account with id: " + delete_id)
+                    println("Deleting account with id: " + delete_id + " and all related information")
                   }
+                  val delete_transaction_history = connection.createStatement()
+                  val delete_transaction_history_result = delete_transaction_history.executeUpdate(s"DELETE FROM transaction_history WHERE user_id=$delete_id")
                   val delete_statement = connection.createStatement()
                   val delete_result = delete_statement.executeUpdate(s"DELETE FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\' and user_id=$delete_id;")
                   println("Done")
