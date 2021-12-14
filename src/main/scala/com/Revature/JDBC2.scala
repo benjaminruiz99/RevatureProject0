@@ -164,7 +164,45 @@ object JDBC2 {
               println("What would you like to do? D to deposit, W to withdraw, V to view balance,E to exit, or DELETE to delete your account.")
             }
             else if (temp == "W") {
-              println("Withdrawing ... done!")
+              var valid_amount = false
+              while (!valid_amount) {
+                println("Enter withdraw amount or 0 if you would like to return to menu.")
+                val withdraw_amount = readLine().toInt
+                if (withdraw_amount > 0) {
+                  valid_amount = true
+                  var user_funds = 0;
+                  val funds_query = connection.createStatement()
+                  val funds_result = funds_query.executeQuery(s"SELECT funds FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  while (funds_result.next()) {
+                    //println("You account balance is: " + user_funds.getString(1))
+                    val temp = funds_result.getString(1)
+                    user_funds += temp.toInt
+                  }
+                  if (withdraw_amount > user_funds) {
+                    println(s"Insufficient funds to withdraw $withdraw_amount")
+                  }
+                  else {
+                    user_funds -= withdraw_amount
+                    val withdraw_update = connection.createStatement()
+                    val withdraw_result = withdraw_update.executeUpdate(s"UPDATE users SET funds=$user_funds WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                    val id_query = connection.createStatement()
+                    val id_result = id_query.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                    while (id_result.next()) {
+                      val id_string = id_result.getString(1)
+                      val id_int = id_string.toInt
+                      val transaction_update = connection.createStatement()
+                      val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount) VALUES($id_int,'withdraw',$withdraw_amount)")
+                    }
+                    println("Withdrawing ... done!")
+                  }
+                }
+                else if (withdraw_amount < 0) {
+                  println("Invalid amount to withdraw")
+                }
+                else {
+                  valid_amount = true
+                }
+              }
               println("What would you like to do? D to deposit, W to withdraw, V to view balance,E to exit, or DELETE to delete your account.")
             }
             else if (temp == "V") {
@@ -173,6 +211,7 @@ object JDBC2 {
               while ( user_funds.next() ) {
                 println("You account balance is: " + user_funds.getString(1))
               }
+              //println("Would you like to view your transaction history?")
               println("What would you like to do? D to deposit, W to withdraw, V to view balance,E to exit, or DELETE to delete your account.")
             }
             else if (temp == "E") {
