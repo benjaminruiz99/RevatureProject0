@@ -5,6 +5,7 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException
 import java.lang.String
+import java.util.Calendar
 import scala.io.StdIn.readLine
 
 
@@ -46,16 +47,19 @@ object JDBC2 {
     var desired_username:String = "";
     var desired_password:String = "placeholder_1";
     var confirm_password:String = "placeholder_2";
+    Class.forName(driver)
+    connection = DriverManager.getConnection(url, username, password)
     while (!exiting) { //while the exit command hasn't been issued
       println("Would you like to login or signup? Enter L for login, S for signup, or E to exit.")
+
       while (!loggedin && !exiting) { //read input until user attempts to login or exit the session
         val temp: String = readLine();
         if (temp == "L") { //if user enters l ("el"), proceed to login process
           loggedin = true;
         }
         else if (temp == "S") {
-          Class.forName(driver)
-          connection = DriverManager.getConnection(url, username, password)
+          //Class.forName(driver)
+          //connection = DriverManager.getConnection(url, username, password)
           while (!signedup) { //stay in while loop until user finishes signing up
             println("What would you like your username to be?")
             desired_username = readLine();
@@ -84,7 +88,9 @@ object JDBC2 {
             println("Would you like to access your account? Y for yes, N for no.")
             val temp = readLine()
             if (temp == "N") {
-              exiting = true;
+              loggedin = false
+              println("Would you like to login or signup? Enter L for login, S for signup, or E to exit.")
+              //exiting = true;
             }
             else if (temp == "Y") {
               loggedin = true
@@ -102,11 +108,11 @@ object JDBC2 {
         val temp_password = readLine();
 
         try {
-          // make the connection
-          if (!signedup) {
-            Class.forName(driver)
-            connection = DriverManager.getConnection(url, username, password)
-          }
+           //make the connection
+          //if (!signedup) {
+          //  Class.forName(driver)
+          //  connection = DriverManager.getConnection(url, username, password)
+          //}
 
           // create the statement, and run the select query
           val statement = connection.createStatement()
@@ -146,11 +152,13 @@ object JDBC2 {
                   val deposit_result = deposit_update.executeUpdate(s"UPDATE users SET funds=$user_funds WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
                   val id_query = connection.createStatement()
                   val id_result = id_query.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  val cal = Calendar.getInstance()
+                  val date:String = cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH)+1) + "-" + cal.get(Calendar.DATE)
                   while (id_result.next()) {
                     val id_string = id_result.getString(1)
                     val id_int = id_string.toInt
                     val transaction_update = connection.createStatement()
-                    val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount) VALUES($id_int,'deposit',$deposit_amount)")
+                    val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount,transaction_date) VALUES($id_int,'deposit',$deposit_amount,\'$date\')")
                   }
                   println("Depositing ... done!")
                 }
@@ -187,11 +195,13 @@ object JDBC2 {
                     val withdraw_result = withdraw_update.executeUpdate(s"UPDATE users SET funds=$user_funds WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
                     val id_query = connection.createStatement()
                     val id_result = id_query.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                    val cal = Calendar.getInstance()
+                    val date:String = cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH)+1) + "-" + cal.get(Calendar.DATE)
                     while (id_result.next()) {
                       val id_string = id_result.getString(1)
                       val id_int = id_string.toInt
                       val transaction_update = connection.createStatement()
-                      val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount) VALUES($id_int,'withdraw',$withdraw_amount)")
+                      val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount,transaction_date) VALUES($id_int,'withdraw',$withdraw_amount,\'$date\');")
                     }
                     println("Withdrawing ... done!")
                   }
@@ -248,9 +258,9 @@ object JDBC2 {
           }
         }
       }
-      connection.close()
+      //connection.close()
     }
-
+    connection.close()
     /*
     try {
       // make the connection
