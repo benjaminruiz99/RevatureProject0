@@ -114,7 +114,7 @@ object JDBC2 {
           val resultSet = statement.executeQuery(s"SELECT * FROM users HAVING users.username=\'$temp_username\' and users.password=\'$temp_password\';")
           if (!resultSet.next()) {
             loggedin = false;
-            println("You don't have an account here");
+            println("You don't have an account here.");
           }
           /*else {
             println("the user exists");
@@ -144,6 +144,14 @@ object JDBC2 {
                   user_funds += deposit_amount
                   val deposit_update = connection.createStatement()
                   val deposit_result = deposit_update.executeUpdate(s"UPDATE users SET funds=$user_funds WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  val id_query = connection.createStatement()
+                  val id_result = id_query.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  while (id_result.next()) {
+                    val id_string = id_result.getString(1)
+                    val id_int = id_string.toInt
+                    val transaction_update = connection.createStatement()
+                    val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount) VALUES($id_int,'deposit',$deposit_amount)")
+                  }
                   println("Depositing ... done!")
                 }
                 else if (deposit_amount < 0) {
