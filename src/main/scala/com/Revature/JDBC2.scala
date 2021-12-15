@@ -133,9 +133,10 @@ object JDBC2 {
       if (loggedin) {
         println("What is your username?");
         val temp_username = readLine();
+        print("\n")
         println("What is your password?");
         val temp_password = readLine();
-
+        print("\n")
         try {
            //make the connection
           //if (!signedup) {
@@ -190,9 +191,11 @@ object JDBC2 {
                     val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount,transaction_date) VALUES($id_int,'deposit',$deposit_amount,\'$date\')")
                   }
                   println("Depositing ... done!")
+                  print("\n")
                 }
                 else if (deposit_amount < 0) {
-                  println("Invalid amount to withdraw")
+                  println("Invalid amount to deposit")
+                  print("\n")
                 }
                 else {
                   valid_amount = true
@@ -233,10 +236,12 @@ object JDBC2 {
                       val transaction_result = transaction_update.executeUpdate(s"INSERT INTO transaction_history(user_id,transaction_type,transaction_amount,transaction_date) VALUES($id_int,'withdraw',$withdraw_amount,\'$date\');")
                     }
                     println("Withdrawing ... done!")
+                    print("\n")
                   }
                 }
                 else if (withdraw_amount < 0) {
                   println("Invalid amount to withdraw")
+                  print("\n")
                 }
                 else {
                   valid_amount = true
@@ -249,8 +254,34 @@ object JDBC2 {
               val user_funds = funds_statement.executeQuery(s"SELECT funds FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
               while ( user_funds.next() ) {
                 println("You account balance is: " + user_funds.getString(1))
+                print("\n")
               }
-              //println("Would you like to view your transaction history?")
+              var view_transactions = false
+              while (!view_transactions) {
+                println("Would you like to view your transaction history? Enter Y to view, N to continue to menu.")
+                val view_choice = readLine()
+                print("\n")
+                if (view_choice == "N") {
+                  view_transactions = true
+                }
+                else if (view_choice == "Y") {
+                  view_transactions = true
+                  val user_history = connection.createStatement()
+                  var view_id = 0;
+                  val view_id_query = connection.createStatement()
+                  val view_id_result = view_id_query.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$temp_username\' and users.password=\'$temp_password\';")
+                  while ( view_id_result.next() ) {
+                    //println("You account balance is: " + user_funds.getString(1))
+                    val temp = view_id_result.getString(1)
+                    view_id = temp.toInt
+                  }
+                  val user_history_result = user_history.executeQuery(s"SELECT transaction_id,transaction_type,transaction_amount,transaction_date FROM transaction_history WHERE transaction_history.user_id=$view_id")
+                  println("id"+ ",\t" + "type" + ",\t" + "amount" +",\t" + "date")
+                  while ( user_history_result.next() ) {
+                    println(user_history_result.getString(1)+",\t" +user_history_result.getString(2) +",\t" +user_history_result.getString(3) + ",\t" + user_history_result.getString(4))
+                  }
+                }
+              }
               println("What would you like to do? D to deposit, W to withdraw, V to view balance,E to exit, or DELETE to delete your account.")
             }
             else if (temp == "E") {
@@ -258,7 +289,7 @@ object JDBC2 {
               exiting = true;
             }
             else if (temp == "DELETE") {
-              println("Are you sure you want to delete your account? Deleting your account will delete all information associated with this account. Enter Yes or No")
+              println("Are you sure you want to delete your account?\nDeleting your account will delete all information associated with this account. Enter Yes or No")
               var deleting = false
               while (!deleting) {
                 val delete_input = readLine()
