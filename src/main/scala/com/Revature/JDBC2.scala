@@ -85,6 +85,35 @@ object JDBC2 {
           if (signedup) {
             val statement = connection.createStatement()
             val resultSet = statement.executeUpdate(s"INSERT INTO users(username,password,funds) VALUES ('$desired_username','$desired_password',0);")
+            var referral:Boolean = false
+            while (!referral) {
+              println("Were you referred by someone? If so, enter their user id number, else enter No")
+              val user_input = readLine()
+              if (user_input == "No") {
+                referral = true
+              }
+              else {
+                val user_input_int = user_input.toInt
+                val check_referral = connection.createStatement()
+                val check_referral_result = check_referral.executeQuery(s"SELECT * FROM users HAVING users.user_id=$user_input_int;")
+                if (!check_referral_result.next()) {
+                  println("Invalid user id number")
+                }
+                else {
+                  referral = true
+                  val user_id_statement = connection.createStatement()
+                  val user_id_result = user_id_statement.executeQuery(s"SELECT user_id FROM users WHERE users.username=\'$desired_username\';")
+                  val cal = Calendar.getInstance()
+                  val date:String = cal.get(Calendar.YEAR) + "-" + (cal.get(Calendar.MONTH)+1) + "-" + cal.get(Calendar.DATE)
+                  while (user_id_result.next()) {
+                    val user_id_string = user_id_result.getString(1)
+                    val user_id_int = user_id_string.toInt
+                    val ref_statement = connection.createStatement()
+                    val ref_result = ref_statement.executeUpdate(s"INSERT INTO referrals(referrer_id,referree_id,referral_date) VALUES ($user_input_int,$user_id_int,\'$date\')")
+                  }
+                }
+              }
+            }
             println("Would you like to access your account? Y for yes, N for no.")
             val temp = readLine()
             if (temp == "N") {
@@ -245,6 +274,8 @@ object JDBC2 {
                     delete_id = temp.toInt
                     println("Deleting account with id: " + delete_id + " and all related information")
                   }
+                  val delete_referrals = connection.createStatement()
+                  val delete_referrals_result = delete_referrals.executeUpdate(s"DELETE FROM referrals WHERE referrer_id=$delete_id or referree_id=$delete_id")
                   val delete_transaction_history = connection.createStatement()
                   val delete_transaction_history_result = delete_transaction_history.executeUpdate(s"DELETE FROM transaction_history WHERE user_id=$delete_id")
                   val delete_statement = connection.createStatement()
